@@ -1,13 +1,10 @@
 package com.example.salarymgt.controller;
 
-import com.example.salarymgt.exception.InvalidInputException;
 import com.example.salarymgt.request.UserRequest;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
-import com.example.salarymgt.service.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -88,10 +85,5 @@ public class UserController {
         return ResponseEntity.ok().body(responses);
     }
 
-    @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public ResponseEntity<MessageResponse> handleException(Exception exception) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new MessageResponse().builder().message(exception.getMessage()).build());
-    }
 
 }
