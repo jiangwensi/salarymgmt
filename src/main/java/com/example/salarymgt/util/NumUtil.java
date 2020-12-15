@@ -15,7 +15,7 @@ public class NumUtil {
     public static BigDecimal bigDecimal(String value) {
         try {
             return new BigDecimal(value).setScale(scale, RoundingMode.HALF_EVEN);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
         }
@@ -24,7 +24,7 @@ public class NumUtil {
     public static BigDecimal bigDecimal(Double value) {
         try {
             return new BigDecimal(value).setScale(scale, RoundingMode.HALF_EVEN);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
         }
@@ -33,7 +33,7 @@ public class NumUtil {
     public static BigDecimal bigDecimal(Integer value) {
         try {
             return new BigDecimal(value).setScale(scale, RoundingMode.HALF_EVEN);
-        } catch (NumberFormatException e) {
+        } catch (Exception e) {
             log.error(e.getMessage(), e);
             throw e;
         }

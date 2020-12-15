@@ -174,7 +174,7 @@ class UserControllerTest {
         given(userMapper.mapUserDtoToUserResponse(userDto3)).willReturn(userResponse3);
 
         MvcResult result =
-                mockMvc.perform(get("/users?minSalary=1&maxSalary=4567.0&offset=1&limit=5"))
+                mockMvc.perform(get("/users?minSalary=1234&maxSalary=4567.0&offset=15&limit=100"))
                         .andExpect(status().is(200)).andReturn();
 
 
@@ -183,7 +183,7 @@ class UserControllerTest {
                         new TypeReference<List<UserResponse>>() {
                         });
 
-        assertEquals(responses, userResponses);
+        assertEquals(userResponses,responses);
 
         verify(userService, times(1)).fetchUsers(NumUtil.bigDecimal(1234), NumUtil.bigDecimal(4567.0), 15, 100);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto1);

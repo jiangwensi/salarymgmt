@@ -1,6 +1,7 @@
 package com.example.salarymgt.controller;
 
 import com.example.salarymgt.dto.UserDto;
+import com.example.salarymgt.mapper.UserMapper;
 import com.example.salarymgt.request.UserRequest;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Created by Jiang Wensi on 11/12/2020
@@ -34,6 +36,7 @@ import java.util.Set;
 public class UserController {
 
     private UserService userService;
+    private UserMapper userMapper;
 
     @PostMapping(value = "/upload")
     public ResponseEntity<MessageResponse> uploadUser(@RequestParam("file") MultipartFile file) throws IOException {
@@ -56,7 +59,7 @@ public class UserController {
             while ((line = reader.readLine()) != null) {
                 String[] values = line.split(",");
                 BigDecimal salary = NumUtil.bigDecimal(values[3]);
-                if(salary.compareTo(BigDecimal.ZERO)<0) {
+                if (salary.compareTo(BigDecimal.ZERO) < 0) {
                     log.error("Salary must not be negative");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                             .body(new MessageResponse().builder()
@@ -80,7 +83,7 @@ public class UserController {
             }
 
             Set<UserRequest> userRequestHashSet = new HashSet<>(userRequests);
-            if(userRequestHashSet.size()!=userRequests.size()){
+            if (userRequestHashSet.size() != userRequests.size()) {
 
                 log.error("Duplicate rows found in the file");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -128,11 +131,34 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> fetchUsers() {
+    public ResponseEntity<List<UserResponse>> fetchUsers
+            (@RequestParam(value = "minSalary", required = false) String minSalary,
+             @RequestParam(value = "maxSalary", required = false) String maxSalary,
+             @RequestParam(value = "offset", required = false) String offset,
+             @RequestParam(value = "limit", required = false) String limit) {
 
-        //TODO
-        List<UserResponse> responses = new ArrayList<>();
+
+        BigDecimal minSalaryDecimal;
+        BigDecimal maxSalaryDecimal;
+        Integer offsetInt ;
+        Integer limitInt ;
+        try {
+            minSalaryDecimal = minSalary == null ? null : NumUtil.bigDecimal(minSalary);
+            maxSalaryDecimal = maxSalary == null ? null : NumUtil.bigDecimal(maxSalary);
+            offsetInt = offset == null ? null : Integer.parseInt(offset);
+            limitInt = limit == null ? null : Integer.parseInt(limit);
+        } catch(Exception e){
+            log.error(e.getMessage(),e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+
+        List<UserDto> userDtos = userService.fetchUsers(minSalaryDecimal, maxSalaryDecimal,
+                offsetInt, limitInt);
+        List<UserResponse> responses = userDtos.stream()
+                        .map(u -> userMapper.mapUserDtoToUserResponse(u))
+                        .collect(Collectors.toList());
         return ResponseEntity.ok().body(responses);
+
     }
 
     @GetMapping("/{id}")
