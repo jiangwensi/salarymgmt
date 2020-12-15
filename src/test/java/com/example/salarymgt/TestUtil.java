@@ -4,6 +4,7 @@ import com.example.salarymgt.dto.UserDto;
 import com.example.salarymgt.entity.UserEntity;
 import com.example.salarymgt.request.UserRequest;
 import com.example.salarymgt.response.UserResponse;
+import com.example.salarymgt.util.NumUtil;
 
 import java.math.BigDecimal;
 import java.text.ParseException;
@@ -14,34 +15,46 @@ import java.text.SimpleDateFormat;
  */
 public class TestUtil {
 
+    private static SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+
     public static UserRequest testUserRequest(int index) {
-        return new UserRequest().builder()
-                .id("id" + index)
-                .login("login" + index)
-                .name("name" + index)
-                .salary(new BigDecimal(index + ".12"))
-                .startDate("2020-01-01")
-                .build();
+        try {
+            return new UserRequest().builder()
+                    .id("id" + index)
+                    .login("login" + index)
+                    .name("name" + index)
+                    .salary(NumUtil.bigDecimal(index + ".12"))
+                    .startDate(sdf.parse("2020-01-01"))
+                    .build();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
-    public static UserResponse testUserResponse(int index){
+    public static UserResponse testUserResponse(int index) {
         return new UserResponse().builder()
                 .id("id" + index)
                 .login("login" + index)
                 .name("name" + index)
-                .salary(new BigDecimal(index+".12"))
+                .salary(NumUtil.bigDecimal(index + ".12"))
                 .startDate("2020-01-01")
                 .build();
     }
 
     public static UserDto testUserDto(int index) {
-        return new UserDto().builder()
-                .id("id" + index)
-                .login("login" + index)
-                .name("name" + index)
-                .salary(new BigDecimal(index + ".12"))
-                .startDate("2020-01-01")
-                .build();
+        try {
+            return new UserDto().builder()
+                    .id("id" + index)
+                    .login("login" + index)
+                    .name("name" + index)
+                    .salary(NumUtil.bigDecimal(index + ".12"))
+                    .startDate(sdf.parse("2020-01-01"))
+                    .build();
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public static UserEntity testUserEntity(int index) {
@@ -49,9 +62,9 @@ public class TestUtil {
         userEntity.setId("id" + index);
         userEntity.setLogin("login" + index);
         userEntity.setName("name" + index);
-        userEntity.setSalary(new BigDecimal(index + ".12"));
+        userEntity.setSalary(NumUtil.bigDecimal(index + ".12"));
         try {
-            userEntity.setStartDate(new SimpleDateFormat("yyyy-MM-dd").parse("2020-01-01"));
+            userEntity.setStartDate(sdf.parse("2020-01-01"));
         } catch (ParseException e) {
             e.printStackTrace();
         }

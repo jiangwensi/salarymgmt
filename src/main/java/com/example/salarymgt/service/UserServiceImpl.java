@@ -6,6 +6,7 @@ import com.example.salarymgt.exception.InvalidInputException;
 import com.example.salarymgt.mapper.UserMapper;
 import com.example.salarymgt.repo.UserRepository;
 import com.example.salarymgt.request.UserRequest;
+import com.example.salarymgt.util.NumUtil;
 import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,10 +46,10 @@ public class UserServiceImpl implements UserService {
 
         List<UserEntity> userEntities;
         if (minSalary == null) {
-            minSalary = BigDecimal.ZERO;
+            minSalary = NumUtil.bigDecimal(0);
         }
         if (maxSalary == null) {
-            maxSalary = new BigDecimal(4000);
+            maxSalary = NumUtil.bigDecimal(4000);
         }
         if (offset == null || offset < 0) {
             offset = 0;

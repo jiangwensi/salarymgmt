@@ -7,6 +7,7 @@ import com.example.salarymgt.exception.InvalidInputException;
 import com.example.salarymgt.mapper.UserMapper;
 import com.example.salarymgt.repo.UserRepository;
 import com.example.salarymgt.request.UserRequest;
+import com.example.salarymgt.util.NumUtil;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import org.junit.jupiter.api.AfterEach;
@@ -100,8 +101,8 @@ class UserServiceImplTest {
 
     @Test
     void fetchUsersAllParam() {
-        BigDecimal minSalary = new BigDecimal(1000);
-        BigDecimal maxSalary = new BigDecimal(2000);
+        BigDecimal minSalary = NumUtil.bigDecimal(1000);
+        BigDecimal maxSalary = NumUtil.bigDecimal(2000);
         Integer offset = 10;
         Integer limit = 3;
 
@@ -128,9 +129,9 @@ class UserServiceImplTest {
 
     @Test
     void fetchUsersNoParam() {
-        BigDecimal minSalary = new BigDecimal(0);
-        BigDecimal maxSalary = new BigDecimal(0);
-        BigDecimal maxSalaryRectified = new BigDecimal(4000);
+        BigDecimal minSalary = NumUtil.bigDecimal(0);
+        BigDecimal maxSalary = NumUtil.bigDecimal(0);
+        BigDecimal maxSalaryRectified = NumUtil.bigDecimal(4000);
         Integer offset = 0;
 
         List<UserEntity> userEntities = new ArrayList<>();

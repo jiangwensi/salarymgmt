@@ -1,15 +1,28 @@
 package com.example.salarymgt.controller;
 
+import com.example.salarymgt.dto.UserDto;
 import com.example.salarymgt.request.UserRequest;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
+import com.example.salarymgt.service.UserService;
+import com.example.salarymgt.util.DateUtil;
+import com.example.salarymgt.util.NumUtil;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigDecimal;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by Jiang Wensi on 11/12/2020
@@ -20,33 +33,98 @@ import java.util.List;
 @Slf4j
 public class UserController {
 
-//    private UserService userService;
+    private UserService userService;
 
-    @PostMapping("/upload")
-    public ResponseEntity<MessageResponse> uploadUser(@RequestBody List<UserRequest> userRequests) {
+    @PostMapping(value = "/upload")
+    public ResponseEntity<MessageResponse> uploadUser(@RequestParam("file") MultipartFile file) throws IOException {
 
-//        int updateCount = 0;
-//        MessageResponse response = new MessageResponse();;
-//        try{
-//            userService.uploadUser(userRequests);
-//        } catch(InvalidInputException e) {
-//            log.error(e.getMessage(),e);
-//            response.setMessage("Invalid user input");
-//            return ResponseEntity.badRequest().body(response);
-//        } catch (Exception e){
-//            log.error(e.getMessage(),e);
-//            response.setMessage("Server error");
-//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
-//        }
-//
-//        if(updateCount==0){
-//            response.setMessage("Success but no data updated.");
-//            return ResponseEntity.status(HttpStatus.OK).body(response);
-//        } else {
-//            response.setMessage("Data created or uploaded.");
-//            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-//        }
-        return null;
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
+            String[] titles = reader.readLine().split(",");
+            if (!(titles[0].equals("id")
+                    && titles[1].equals("login")
+                    && titles[2].equals("name")
+                    && titles[3].equals("salary")
+                    && titles[4].equals("startDate"))) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new MessageResponse().builder()
+                                .message("Unable to read the file. Please check file format")
+                                .build());
+            }
+
+            List<UserRequest> userRequests = new ArrayList<>();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] values = line.split(",");
+                BigDecimal salary = NumUtil.bigDecimal(values[3]);
+                if(salary.compareTo(BigDecimal.ZERO)<0) {
+                    log.error("Salary must not be negative");
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                            .body(new MessageResponse().builder()
+                                    .message("Parsing Error. Please check salary format")
+                                    .build());
+                }
+                userRequests.add(new UserRequest().builder()
+                        .id(values[0])
+                        .login(values[1])
+                        .name(values[2])
+                        .salary(salary)
+                        .startDate(DateUtil.parse(values[4]))
+                        .build());
+            }
+
+            if (userRequests.size() == 0) {
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(new MessageResponse().builder()
+                                .message("Success but no data updated")
+                                .build());
+            }
+
+            Set<UserRequest> userRequestHashSet = new HashSet<>(userRequests);
+            if(userRequestHashSet.size()!=userRequests.size()){
+
+                log.error("Duplicate rows found in the file");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new MessageResponse().builder()
+                                .message("Duplicate rows found in the file")
+                                .build());
+            }
+
+            List<UserDto> userDtos = userService.uploadUsers(userRequests);
+
+            if (userDtos.size() > 0) {
+                return ResponseEntity.status(HttpStatus.CREATED)
+                        .body(new MessageResponse().builder()
+                                .message("Data created or updated")
+                                .build());
+            } else {
+                log.error("Failed to upload file");
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new MessageResponse().builder()
+                                .message("Failed to upload due to server error")
+                                .build());
+            }
+
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse().builder()
+                            .message("Unable to read the file. Please check file format")
+                            .build());
+
+        } catch (ParseException e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse().builder()
+                            .message("Parsing Error. Please check date format")
+                            .build());
+
+        } catch (NumberFormatException e) {
+            log.error(e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new MessageResponse().builder()
+                            .message("Parsing Error. Please check salary format")
+                            .build());
+        }
     }
 
     @GetMapping

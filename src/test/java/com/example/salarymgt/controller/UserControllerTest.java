@@ -8,7 +8,8 @@ import com.example.salarymgt.request.UserRequest;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
 import com.example.salarymgt.service.UserService;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.example.salarymgt.util.DateUtil;
+import com.example.salarymgt.util.NumUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -16,11 +17,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.io.*;
-import java.math.BigDecimal;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,9 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
@@ -46,12 +48,29 @@ class UserControllerTest {
     MockMvc mockMvc;
 
     @Test
-    void uploadUser() throws Exception {
+    void uploadUsers() throws Exception {
         String csv = readFile("src/test/resources/testData.csv");
+        MockMultipartFile csvFile = new MockMultipartFile("file", "testData.csv", "text/csv", csv.getBytes());
 
-        MvcResult result = mockMvc.perform(post("/users/upload")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .content(csv)
+        List<UserRequest> userRequests = new ArrayList<>();
+        userRequests.add(new UserRequest().builder().id("e0001").login("hpotter").name("Harry Potter").salary(NumUtil.bigDecimal(1234.00)).startDate(DateUtil.parse("16-Nov-01")).build());
+        userRequests.add(new UserRequest().builder().id("e0002").login("rwesley").name("Ron Weasley").salary(NumUtil.bigDecimal(19234.50)).startDate(DateUtil.parse("2001-11-16")).build());
+        userRequests.add(new UserRequest().builder().id("e0003").login("ssnape").name("Severus Snape").salary(NumUtil.bigDecimal(4000.0)).startDate(DateUtil.parse("2001-11-16")).build());
+        userRequests.add(new UserRequest().builder().id("e0004").login("rhagrid").name("Rubeus Hagrid").salary(NumUtil.bigDecimal(3999.999)).startDate(DateUtil.parse("16-Nov-01")).build());
+        userRequests.add(new UserRequest().builder().id("e0005").login("voldemort").name("Lord Voldemort").salary(NumUtil.bigDecimal(523.4)).startDate(DateUtil.parse("17-Nov-01")).build());
+        userRequests.add(new UserRequest().builder().id("e0006").login("gwesley").name("Ginny Weasley").salary(NumUtil.bigDecimal(4000.004)).startDate(DateUtil.parse("18-Nov-01")).build());
+        userRequests.add(new UserRequest().builder().id("e0007").login("hgranger").name("Hermione Granger").salary(NumUtil.bigDecimal(0.0)).startDate(DateUtil.parse("2001-11-18")).build());
+        userRequests.add(new UserRequest().builder().id("e0008").login("adumbledore").name("Albus Dumbledore").salary(NumUtil.bigDecimal(34.23)).startDate(DateUtil.parse("2001-11-19")).build());
+        userRequests.add(new UserRequest().builder().id("e0009").login("dmalfoy").name("Draco Malfoy").salary(NumUtil.bigDecimal(34234.5)).startDate(DateUtil.parse("2001-11-20")).build());
+        userRequests.add(new UserRequest().builder().id("e0010").login("basilisk").name("Basilisk").salary(NumUtil.bigDecimal(23.43)).startDate(DateUtil.parse("21-Nov-01")).build());
+
+        List<UserDto> userDtos = new ArrayList<>();
+        userDtos.add(mock(UserDto.class));
+
+        given(userService.uploadUsers(userRequests)).willReturn(userDtos);
+        MvcResult result = mockMvc.perform(multipart("/users/upload")
+                .file(csvFile)
+                .characterEncoding("UTF-8")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(201))
                 .andReturn();
@@ -63,11 +82,12 @@ class UserControllerTest {
     }
 
     @Test
-    void uploadUserEmpty() throws Exception {
+    void uploadUsersEmpty() throws Exception {
         String csv = readFile("src/test/resources/testDataEmpty.csv");
-        MvcResult result = mockMvc.perform(post("/users/upload")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .content(csv)
+        MockMultipartFile csvFile = new MockMultipartFile("file", "testData.csv", "text/csv", csv.getBytes());
+        MvcResult result = mockMvc.perform(multipart("/users/upload")
+                .file(csvFile)
+                .characterEncoding("UTF-8")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(200))
                 .andReturn();
@@ -79,50 +99,53 @@ class UserControllerTest {
     }
 
     @Test
-    void uploadUserInvalidDate() throws Exception {
+    void uploadUsersInvalidDate() throws Exception {
         String csv = readFile("src/test/resources/testDataInvalidDate.csv");
-        MvcResult result = mockMvc.perform(post("/users/upload")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .content(csv)
+        MockMultipartFile csvFile = new MockMultipartFile("file", "testDataInvalidDate.csv", "text/csv", csv.getBytes());
+        MvcResult result = mockMvc.perform(multipart("/users/upload")
+                .file(csvFile)
+                .characterEncoding("UTF-8")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(400))
                 .andReturn();
 
         MessageResponse messageResponse = new ObjectMapper().readValue(result.getResponse().getContentAsString(),
                 MessageResponse.class);
-        assertEquals("Bad input - parsing error, duplicate row, invalid salary etc.", messageResponse.getMessage());
+        assertEquals("Parsing Error. Please check date format", messageResponse.getMessage());
         verify(userService, times(0)).uploadUsers(any());
     }
 
     @Test
-    void uploadUserInvalidSalary() throws Exception {
+    void uploadUsersInvalidSalary() throws Exception {
         String csv = readFile("src/test/resources/testDataInvalidSalary.csv");
-        MvcResult result = mockMvc.perform(post("/users/upload")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .content(csv)
+        MockMultipartFile csvFile = new MockMultipartFile("file", "testDataInvalidSalary.csv", "text/csv", csv.getBytes());
+        MvcResult result = mockMvc.perform(multipart("/users/upload")
+                .file(csvFile)
+                .characterEncoding("UTF-8")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(400))
                 .andReturn();
 
         MessageResponse messageResponse = new ObjectMapper().readValue(result.getResponse().getContentAsString(),
                 MessageResponse.class);
-        assertEquals("Bad input - parsing error, duplicate row, invalid salary etc.", messageResponse.getMessage());
+        assertEquals("Parsing Error. Please check salary format", messageResponse.getMessage());
         verify(userService, times(0)).uploadUsers(any());
     }
 
     @Test
-    void uploadUserDuplicateRow() throws Exception {
+    void uploadUsersDuplicateRow() throws Exception {
         String csv = readFile("src/test/resources/testDataDuplicateRow.csv");
-        MvcResult result = mockMvc.perform(post("/users/upload")
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .content(csv)
+        MockMultipartFile csvFile = new MockMultipartFile("file", "testDataDuplicateRow.csv", "text/csv", csv.getBytes());
+        MvcResult result = mockMvc.perform(multipart("/users/upload")
+                .file(csvFile)
+                .characterEncoding("UTF-8")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(400))
                 .andReturn();
 
         MessageResponse messageResponse = new ObjectMapper().readValue(result.getResponse().getContentAsString(),
                 MessageResponse.class);
-        assertEquals("Bad input - parsing error, duplicate row, invalid salary etc.", messageResponse.getMessage());
+        assertEquals("Duplicate rows found in the file", messageResponse.getMessage());
         verify(userService, times(0)).uploadUsers(any());
     }
 
@@ -145,7 +168,7 @@ class UserControllerTest {
         userResponses.add(userResponse2);
         userResponses.add(userResponse3);
 
-        given(userService.fetchUsers(new BigDecimal(1234), new BigDecimal(4567.0), 15, 100)).willReturn(userDtos);
+        given(userService.fetchUsers(NumUtil.bigDecimal(1234), NumUtil.bigDecimal(4567.0), 15, 100)).willReturn(userDtos);
         given(userMapper.mapUserDtoToUserResponse(userDto1)).willReturn(userResponse1);
         given(userMapper.mapUserDtoToUserResponse(userDto2)).willReturn(userResponse2);
         given(userMapper.mapUserDtoToUserResponse(userDto3)).willReturn(userResponse3);
@@ -162,7 +185,7 @@ class UserControllerTest {
 
         assertEquals(responses, userResponses);
 
-        verify(userService, times(1)).fetchUsers(new BigDecimal(1234), new BigDecimal(4567.0), 15, 100);
+        verify(userService, times(1)).fetchUsers(NumUtil.bigDecimal(1234), NumUtil.bigDecimal(4567.0), 15, 100);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto1);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto2);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto3);
@@ -508,6 +531,7 @@ class UserControllerTest {
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             while ((line = reader.readLine()) != null) {
                 csv.append(line);
+                csv.append("\r\n");
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();

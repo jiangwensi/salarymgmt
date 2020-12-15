@@ -26,6 +26,6 @@ public class UserDto {
     private String login;
     private String name;
     private BigDecimal salary;
-    private String startDate;
+    private Date startDate;
 
 }
