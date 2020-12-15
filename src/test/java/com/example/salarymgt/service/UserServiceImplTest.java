@@ -28,8 +28,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
-@AllArgsConstructor
-@NoArgsConstructor
 class UserServiceImplTest {
 
     @MockBean
@@ -87,7 +85,7 @@ class UserServiceImplTest {
     void uploadUsersEmpty() {
         List<UserRequest> userRequests = new ArrayList<>();
         List<UserDto> userDtos = userService.uploadUsers(userRequests);
-        verify(userRepository, times(0));
+        verify(userRepository, times(0)).saveAll(any());
         assertEquals(0, userDtos.size());
     }
 
@@ -95,7 +93,7 @@ class UserServiceImplTest {
     void uploadUsersNull() {
         List<UserRequest> userRequests = null;
         List<UserDto> userDtos = userService.uploadUsers(userRequests);
-        verify(userRepository, times(0));
+        verify(userRepository, times(0)).saveAll(any());
         assertEquals(0, userDtos.size());
     }
 
@@ -131,6 +129,7 @@ class UserServiceImplTest {
     void fetchUsersNoParam() {
         BigDecimal minSalary = new BigDecimal(0);
         BigDecimal maxSalary = new BigDecimal(0);
+        BigDecimal maxSalaryRectified = new BigDecimal(4000);
         Integer offset = 0;
 
         List<UserEntity> userEntities = new ArrayList<>();
@@ -147,9 +146,9 @@ class UserServiceImplTest {
         given(userMapper.mapUserEntityToDto(testUserEntity(1222))).willReturn(testUserDto(1222));
         given(userMapper.mapUserEntityToDto(testUserEntity(1333))).willReturn(testUserDto(1333));
 
-        given(userRepository.findBySalaryRangeOffset(minSalary, maxSalary, offset)).willReturn(userEntities);
+        given(userRepository.findBySalaryRangeOffset(minSalary, maxSalaryRectified, offset)).willReturn(userEntities);
         List<UserDto> userDtos = userService.fetchUsers(null, null, null, null);
-        verify(userRepository, times(1)).findBySalaryRangeOffset(minSalary, maxSalary, offset);
+        verify(userRepository, times(1)).findBySalaryRangeOffset(minSalary, maxSalaryRectified, offset);
         assertEquals(expectedDtos, userDtos);
     }
 
@@ -203,15 +202,11 @@ class UserServiceImplTest {
                 () -> userService.createUser(userRequest1));
 
         assertEquals("Employee ID already exists",exception.getMessage());
-        verify(userMapper, times(1)).mapUserRequestToEntity(any());
+        verify(userMapper, times(0)).mapUserRequestToEntity(any());
         verify(userRepository, times(1)).findById(anyString());
-        verify(userRepository, times(1));
         verify(userRepository, times(0)).save(any());
         verify(userMapper, times(0)).mapUserEntityToDto(any());
-
     }
-
-
 
     @Test
     void createUserDuplicateLogin() {
@@ -225,10 +220,9 @@ class UserServiceImplTest {
                 () -> userService.createUser(userRequest1));
 
         assertEquals("Employee login not unique",exception.getMessage());
-        verify(userMapper, times(1)).mapUserRequestToEntity(any());
+        verify(userMapper, times(0)).mapUserRequestToEntity(any());
         verify(userRepository, times(1)).findById(anyString());
         verify(userRepository, times(1)).findByLogin(anyString());
-        verify(userRepository, times(2));
         verify(userRepository, times(0)).save(any());
         verify(userMapper, times(0)).mapUserEntityToDto(any());
     }
@@ -236,16 +230,17 @@ class UserServiceImplTest {
     @Test
     void updateUser() {
 
+        String updatedLogin = "1update";
         UserRequest userRequest1 = testUserRequest(1);
         UserEntity userEntity1 = testUserEntity(1);
-        UserEntity userEntity1Update = testUserEntity(11);
-        userEntity1Update.setId(userEntity1.getId());
-
-        UserDto expectedUserDto = testUserDto(11);
-        expectedUserDto.setId(userEntity1.getId());
+        userRequest1.setLogin(updatedLogin);
+        UserEntity userEntity1Update = testUserEntity(1);
+        userEntity1Update.setLogin(updatedLogin);
+        UserDto expectedUserDto = testUserDto(1);
+        expectedUserDto.setLogin(updatedLogin);
 
         given(userRepository.findById(userEntity1.getId())).willReturn(userEntity1);
-        given(userMapper.mapUserRequestToEntity(any())).willReturn(userEntity1Update);
+        given(userMapper.mapUserRequestToEntity(userRequest1)).willReturn(userEntity1Update);
         given(userRepository.findByLogin(userEntity1Update.getLogin())).willReturn(null);
         given(userRepository.save(userEntity1Update)).willReturn(userEntity1Update);
         given(userMapper.mapUserEntityToDto(userEntity1Update)).willReturn(expectedUserDto);
@@ -265,14 +260,16 @@ class UserServiceImplTest {
     @Test
     void updateUserDuplicateLogin() {
 
+        String updatedLogin = "1update";
         UserRequest userRequest1 = testUserRequest(1);
+        userRequest1.setLogin(updatedLogin);
         UserEntity userEntity1 = testUserEntity(1);
-        UserEntity userEntity1Update = testUserEntity(11);
-        userEntity1Update.setId(userEntity1.getId());
+        UserEntity userEntity1Update = testUserEntity(1);
+        userEntity1Update.setLogin(updatedLogin);
 
         given(userRepository.findById(userEntity1.getId())).willReturn(userEntity1);
         given(userMapper.mapUserRequestToEntity(any())).willReturn(userEntity1Update);
-        given(userRepository.findByLogin(userEntity1Update.getLogin())).willReturn(userEntity1Update);
+        given(userRepository.findByLogin(updatedLogin)).willReturn(userEntity1Update);
 
         InvalidInputException exception = assertThrows(InvalidInputException.class,
                 () -> userService.updateUser(userRequest1));
@@ -280,7 +277,7 @@ class UserServiceImplTest {
         assertEquals("Employee login not unique", exception.getMessage());
 
         verify(userRepository,times(1)).findById(userEntity1.getId());
-        verify(userMapper, times(1)).mapUserRequestToEntity(any());
+        verify(userMapper, times(0)).mapUserRequestToEntity(any());
         verify(userRepository,times(1)).findByLogin(userEntity1Update.getLogin());
         verify(userRepository, times(0)).save(any());
         verify(userMapper, times(0)).mapUserEntityToDto(any());
@@ -290,12 +287,8 @@ class UserServiceImplTest {
     @Test
     void updateUserNotExists() {
 
-
         UserRequest userRequest1 = testUserRequest(1);
         UserEntity userEntity1 = testUserEntity(1);
-
-        UserDto expectedUserDto = testUserDto(11);
-        expectedUserDto.setId(userEntity1.getId());
 
         given(userRepository.findById(userEntity1.getId())).willReturn(null);
 
@@ -316,17 +309,12 @@ class UserServiceImplTest {
         UserRequest userRequest1 = testUserRequest(1);
         UserEntity userEntity1 = testUserEntity(1);
 
-        UserDto expectedUserDto = testUserDto(11);
-        expectedUserDto.setId(userEntity1.getId());
-
         given(userRepository.findById(userEntity1.getId())).willReturn(userEntity1);
 
         userService.deleteUser(userRequest1.getId());
 
         verify(userRepository,times(1)).findById(userEntity1.getId());
-        verify(userMapper, times(1)).mapUserRequestToEntity(any());
         verify(userRepository,times(1)).deleteById(userEntity1.getId());
-
     }
 
     @Test
@@ -335,9 +323,6 @@ class UserServiceImplTest {
         UserRequest userRequest1 = testUserRequest(1);
         UserEntity userEntity1 = testUserEntity(1);
 
-        UserDto expectedUserDto = testUserDto(11);
-        expectedUserDto.setId(userEntity1.getId());
-
         given(userRepository.findById(userEntity1.getId())).willReturn(null);
 
         InvalidInputException exception =
@@ -345,8 +330,7 @@ class UserServiceImplTest {
 
         assertEquals("No such employee",exception.getMessage());
         verify(userRepository,times(1)).findById(userEntity1.getId());
-        verify(userMapper, times(1)).mapUserRequestToEntity(any());
-        verify(userRepository,times(1)).deleteById(userEntity1.getId());
+        verify(userRepository,times(0)).deleteById(anyString());
 
     }
 

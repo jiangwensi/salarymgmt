@@ -34,6 +34,6 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
                                                   @Param("maxSalary") BigDecimal maxSalary,
                                                   @Param("offset") Integer offset);
     UserEntity findById(String id);
-    UserEntity deleteById(String id);
+    void deleteById(String id);
     UserEntity findByLogin(String login);
 }

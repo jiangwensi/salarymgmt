@@ -14,7 +14,7 @@ public interface UserService {
 
     List<UserDto> uploadUsers(List<UserRequest> userRequests);
 
-    List<UserDto> fetchUsers(BigDecimal minSalary, BigDecimal maxSalary, Integer start, Integer limit);
+    List<UserDto> fetchUsers(BigDecimal minSalary, BigDecimal maxSalary, Integer offset, Integer limit);
 
     UserDto getUser(String userID);
 
