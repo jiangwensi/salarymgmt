@@ -2,6 +2,6 @@
   "id": "1",
   "name": "name1",
   "login": "login1",
-  "salary": "??",
+  "salary": "invalid",
   "startDate": "2020-01-01"
 }

@@ -1,11 +1,15 @@
 package com.example.salarymgt.controller;
 
 import com.example.salarymgt.response.MessageResponse;
+import com.fasterxml.jackson.core.JsonParseException;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
@@ -16,27 +20,40 @@ import java.util.List;
  * Created by Jiang Wensi on 15/12/2020
  */
 @ControllerAdvice
-public class ExceptionHandler {
+public class ExceptionAdvisor {
 
-    @ExceptionHandler(BindException.class)
+    @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public MessageResponse handleException(BindException ex) {
+    public MessageResponse handleException(HttpMessageNotReadableException ex) {
+        System.out.println(ex);
+        Throwable cause = ex.getCause();
 
-        List<FieldError> errors = ex.getBindingResult().getFieldErrors();
-
-        List<ErrorDetails> errorDetails = new ArrayList<>();
-        for (FieldError fieldError : errors) {
-            ErrorDetails error = new ErrorDetails();
-            error.setFieldName(fieldError.getField());
-            error.setMessage(fieldError.getDefaultMessage());
-            errorDetails.add(error);
+        if(cause instanceof InvalidFormatException){
+            InvalidFormatException jpe = (InvalidFormatException)cause;
+            if(jpe.getPath().toString().equals("[com.example.salarymgt.request.UserRequest[\"salary\"]]")){
+                return new MessageResponse("Invalid salary");
+            }
+            if(jpe.getPath().toString().equals("[com.example.salarymgt.request.UserRequest[\"startDate\"]]")){
+                return new MessageResponse("Invalid date");
+            }
         }
 
-        ErrorResponse errorResponse = new ErrorResponse();
-        errorResponse.setErrors(errorDetails);
+       String path= ex.getHttpInputMessage().getHeaders().getLocation().getPath();
+//        List<FieldError> errors = ex.getBindingResult().getFieldErrors();
 
-        return errorResponse;
+        MessageResponse messageResponse=new MessageResponse();
+//        if(errors!=null&& errors.size()>0){
+//            FieldError fieldError = errors.get(0);
+//            if(fieldError.getField().equals("salary")){
+//                messageResponse.setMessage("Invalid salary");
+//            }
+//            if(fieldError.getField().equals("startDate")){
+//                messageResponse.setMessage("Invalid date");
+//            }
+//        }
+
+        return new MessageResponse("Invalid input");
     }
 
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

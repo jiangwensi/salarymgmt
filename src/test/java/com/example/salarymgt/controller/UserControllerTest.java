@@ -367,19 +367,21 @@ class UserControllerTest {
     @Test
     void createUserInvalidSalary() throws Exception {
 
+        String content = readFile("src/test/resources/userInvalidSalary.json");
         MvcResult mvcResult =
                 mockMvc.perform(post("/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(readFile("src/test/resources/userInvalidSalary.json"))
+                        .content(content)
                         .accept(MediaType.APPLICATION_JSON))
                         .andExpect(status().is(400))
                         .andReturn();
 
-//        MessageResponse response = new ObjectMapper()
-//                .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
-//
-//        assertEquals("Invalid salary",response.getMessage());
-//        verify(userService,times(0)).createUser(any());
+        System.out.println(mvcResult);
+        MessageResponse response = new ObjectMapper()
+                .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
+
+        assertEquals("Invalid salary",response.getMessage());
+        verify(userService,times(0)).createUser(any());
     }
 
     @Test
