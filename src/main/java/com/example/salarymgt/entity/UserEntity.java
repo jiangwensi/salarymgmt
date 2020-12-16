@@ -18,7 +18,7 @@ import java.util.Date;
  */
 @Data
 @Entity(name = "user")
-
+@Builder
 public class UserEntity {
 
     @Id
