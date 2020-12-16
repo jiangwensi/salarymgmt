@@ -30,7 +30,7 @@ class UserRepositoryTest {
 
     @Test
     void countTestData() {
-        assertEquals(3, userRepository.findAll().size());
+        assertEquals(5, userRepository.findAll().size());
     }
 
     @Test
