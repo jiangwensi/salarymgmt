@@ -162,9 +162,12 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getUser() {
-        //TODO
-        UserResponse response = new UserResponse();
+    public ResponseEntity<UserResponse> getUser(@PathVariable("id") String userId) {
+        UserDto userDto = userService.getUser(userId);
+        if(userDto==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        UserResponse response = userMapper.mapUserDtoToUserResponse(userDto);
         return ResponseEntity.ok().body(response);
     }
 
