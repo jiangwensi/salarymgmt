@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -172,25 +173,24 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<List<MessageResponse>> createUser() {
-        //TODO
-        List<MessageResponse> response = new ArrayList<>();
-        return ResponseEntity.ok().body(response);
+    public ResponseEntity<MessageResponse> createUser(@RequestBody UserRequest user, BindingResult result) {
+
+
+        return ResponseEntity.notFound().build();
     }
 
     @PatchMapping
-    public ResponseEntity<List<MessageResponse>> updateUser() {
+    public ResponseEntity<MessageResponse> updateUser() {
         //TODO
-        List<MessageResponse> responses = new ArrayList<>();
-        return ResponseEntity.ok().body(responses);
+
+        return ResponseEntity.notFound().build();
     }
 
     @DeleteMapping
-    public ResponseEntity<List<MessageResponse>> deleteUser() {
+    public ResponseEntity<MessageResponse> deleteUser() {
         //TODO
-        List<MessageResponse> responses = new ArrayList<>();
-        return ResponseEntity.ok().body(responses);
-    }
 
+        return ResponseEntity.notFound().build();
+    }
 
 }
