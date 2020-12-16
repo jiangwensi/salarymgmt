@@ -7,7 +7,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -22,15 +24,32 @@ import java.util.List;
 @ControllerAdvice
 public class ExceptionAdvisor {
 
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public MessageResponse handleBindingException(MethodArgumentNotValidException ex) {
+
+        List<FieldError> fieldErrors = ex.getFieldErrors();
+        if(fieldErrors!=null && fieldErrors.size()>0){
+            FieldError fieldError = fieldErrors.get(0);
+            if (fieldError.getField().equals("salary")) {
+                return new MessageResponse("Invalid salary");
+            }
+            if (fieldError.getField().equals("startDate")) {
+                return new MessageResponse("Invalid date");
+            }
+        }
+
+        return new MessageResponse("Invalid input");
+    }
+
     @ExceptionHandler(HttpMessageNotReadableException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ResponseBody
-    public MessageResponse handleException(HttpMessageNotReadableException ex) {
-        System.out.println(ex);
-        Throwable cause = ex.getCause();
+    public MessageResponse handleHttpMessageNotReadableException(HttpMessageNotReadableException ex) {
 
-        if(cause instanceof InvalidFormatException){
-            InvalidFormatException jpe = (InvalidFormatException)cause;
+        if(ex.getCause() instanceof InvalidFormatException){
+            InvalidFormatException jpe = (InvalidFormatException)ex.getCause();
             if(jpe.getPath().toString().equals("[com.example.salarymgt.request.UserRequest[\"salary\"]]")){
                 return new MessageResponse("Invalid salary");
             }
@@ -38,21 +57,6 @@ public class ExceptionAdvisor {
                 return new MessageResponse("Invalid date");
             }
         }
-
-       String path= ex.getHttpInputMessage().getHeaders().getLocation().getPath();
-//        List<FieldError> errors = ex.getBindingResult().getFieldErrors();
-
-        MessageResponse messageResponse=new MessageResponse();
-//        if(errors!=null&& errors.size()>0){
-//            FieldError fieldError = errors.get(0);
-//            if(fieldError.getField().equals("salary")){
-//                messageResponse.setMessage("Invalid salary");
-//            }
-//            if(fieldError.getField().equals("startDate")){
-//                messageResponse.setMessage("Invalid date");
-//            }
-//        }
-
         return new MessageResponse("Invalid input");
     }
 

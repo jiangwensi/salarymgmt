@@ -321,15 +321,13 @@ class UserControllerTest {
                 MessageResponse.class);
 
         assertEquals(messageResponse,response);
-        verify(userService,times(1)).createUser(userRequest);
+        verify(userService,times(1)).createUser(any());
     }
 
     @Test
     void createUserDuplicateID() throws Exception {
 
-        UserRequest userRequest = TestUtil.testUserRequest(1);
-
-        given(userService.createUser(userRequest)).willThrow(new InvalidInputException("Employee ID already exists"));
+        given(userService.createUser(any())).willThrow(new InvalidInputException("Employee ID already exists"));
 
         MvcResult mvcResult =
                 mockMvc.perform(post("/users")
@@ -343,14 +341,13 @@ class UserControllerTest {
                 .readValue(mvcResult.getResponse().getContentAsString(),MessageResponse.class);
 
         assertEquals("Employee ID already exists",response.getMessage());
-        verify(userService,times(0)).createUser(any());
+        verify(userService,times(1)).createUser(any());
     }
 
     @Test
     void createUserDuplicateLogin() throws Exception {
-        UserRequest userRequest = TestUtil.testUserRequest(1);
 
-        given(userService.createUser(userRequest)).willThrow(new InvalidInputException("Employee login not unique"));
+        given(userService.createUser(any())).willThrow(new InvalidInputException("Employee login not unique"));
 
         MvcResult mvcResult =
                 mockMvc.perform(post("/users")
@@ -361,7 +358,7 @@ class UserControllerTest {
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
         assertEquals("Employee login not unique",response.getMessage());
-        verify(userService,times(0)).createUser(any());
+        verify(userService,times(1)).createUser(any());
     }
 
     @Test

@@ -13,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -174,31 +175,17 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<MessageResponse> createUser(@RequestBody @Valid UserRequest request, BindingResult bindingResult) {
+    public ResponseEntity<MessageResponse> createUser(@RequestBody @Valid UserRequest request) {
 
-        System.out.println(request);
-        System.out.println(bindingResult);
-//        String salary = request.getSalary();
-//        BigDecimal salaryDecimal = null;
-//        try{
-//            salaryDecimal = NumUtil.bigDecimal(salary);
-//        } catch (Exception e){
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(
-//                    "Invalid Salary").build());
-//        }
-//        if(salaryDecimal.compareTo(BigDecimal.ZERO)<0){
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(
-//                    "Invalid Salary").build());
-//        }
-//        try {
-//            userService.createUser(request);
-//            return ResponseEntity.status(HttpStatus.CREATED).body(new MessageResponse().builder().message("Successfully " +
-//                    "created").build());
-//        } catch (Exception e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(e.getMessage()).build());
-//        }
+        try {
+            userService.createUser(request);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(new MessageResponse()
+                            .builder().message("Successfully created").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(e.getMessage()).build());
+        }
 
-        return ResponseEntity.notFound().build();
     }
 
     @PatchMapping
