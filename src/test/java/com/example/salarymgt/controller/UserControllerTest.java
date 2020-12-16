@@ -5,6 +5,7 @@ import com.example.salarymgt.dto.UserDto;
 import com.example.salarymgt.exception.InvalidInputException;
 import com.example.salarymgt.mapper.UserMapper;
 import com.example.salarymgt.request.UserRequest;
+import com.example.salarymgt.response.FetchUsersResponse;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
 import com.example.salarymgt.service.UserService;
@@ -169,6 +170,7 @@ class UserControllerTest {
         userResponses.add(userResponse2);
         userResponses.add(userResponse3);
 
+
         given(userService.fetchUsers(NumUtil.bigDecimal(1234), NumUtil.bigDecimal(4567.0), 15, 100)).willReturn(userDtos);
         given(userMapper.mapUserDtoToUserResponse(userDto1)).willReturn(userResponse1);
         given(userMapper.mapUserDtoToUserResponse(userDto2)).willReturn(userResponse2);
@@ -178,13 +180,11 @@ class UserControllerTest {
                 mockMvc.perform(get("/users?minSalary=1234&maxSalary=4567.0&offset=15&limit=100"))
                         .andExpect(status().is(200)).andReturn();
 
-
-        List<UserResponse> responses =
+        FetchUsersResponse responses =
                 new ObjectMapper().readValue(result.getResponse().getContentAsString(),
-                        new TypeReference<List<UserResponse>>() {
-                        });
+                        FetchUsersResponse.class);
 
-        assertEquals(userResponses,responses);
+        assertEquals(new FetchUsersResponse().builder().results(userResponses).build(), responses);
 
         verify(userService, times(1)).fetchUsers(NumUtil.bigDecimal(1234), NumUtil.bigDecimal(4567.0), 15, 100);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto1);
@@ -221,12 +221,12 @@ class UserControllerTest {
                         .andExpect(status().is(200)).andReturn();
 
 
-        List<UserResponse> responses =
-                new ObjectMapper().readValue(result.getResponse().getContentAsString(),
-                        new TypeReference<List<UserResponse>>() {
-                        });
 
-        assertEquals(responses, userResponses);
+        FetchUsersResponse responses =
+                new ObjectMapper().readValue(result.getResponse().getContentAsString(),
+                        FetchUsersResponse.class);
+
+        assertEquals(new FetchUsersResponse().builder().results(userResponses).build(), responses);
 
         verify(userService, times(1)).fetchUsers(null, null, null, null);
         verify(userMapper, times(1)).mapUserDtoToUserResponse(userDto1);
@@ -321,8 +321,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
 
-        assertEquals(messageResponse,response);
-        verify(userService,times(1)).createUser(any());
+        assertEquals(messageResponse, response);
+        verify(userService, times(1)).createUser(any());
     }
 
     @Test
@@ -339,10 +339,10 @@ class UserControllerTest {
                         .andReturn();
 
         MessageResponse response = new ObjectMapper()
-                .readValue(mvcResult.getResponse().getContentAsString(),MessageResponse.class);
+                .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Employee ID already exists",response.getMessage());
-        verify(userService,times(1)).createUser(any());
+        assertEquals("Employee ID already exists", response.getMessage());
+        verify(userService, times(1)).createUser(any());
     }
 
     @Test
@@ -358,8 +358,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Employee login not unique",response.getMessage());
-        verify(userService,times(1)).createUser(any());
+        assertEquals("Employee login not unique", response.getMessage());
+        verify(userService, times(1)).createUser(any());
     }
 
     @Test
@@ -378,8 +378,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Invalid salary",response.getMessage());
-        verify(userService,times(0)).createUser(any());
+        assertEquals("Invalid salary", response.getMessage());
+        verify(userService, times(0)).createUser(any());
     }
 
     @Test
@@ -393,10 +393,10 @@ class UserControllerTest {
                         .andReturn();
 
         MessageResponse response = new ObjectMapper()
-                .readValue(mvcResult.getResponse().getContentAsString(),MessageResponse.class);
+                .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Invalid date",response.getMessage());
-        verify(userService,times(0)).createUser(any());
+        assertEquals("Invalid date", response.getMessage());
+        verify(userService, times(0)).createUser(any());
     }
 
     @Test
@@ -414,10 +414,10 @@ class UserControllerTest {
                         .andReturn();
 
         MessageResponse response = new ObjectMapper()
-                .readValue(mvcResult.getResponse().getContentAsString(),MessageResponse.class);
+                .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Successfully updated",response.getMessage());
-        verify(userService,times(1)).updateUser(any());
+        assertEquals("Successfully updated", response.getMessage());
+        verify(userService, times(1)).updateUser(any());
     }
 
     @Test
@@ -436,8 +436,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("No such employee",response.getMessage());
-        verify(userService,times(1)).updateUser(any());
+        assertEquals("No such employee", response.getMessage());
+        verify(userService, times(1)).updateUser(any());
     }
 
     @Test
@@ -456,8 +456,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
-        assertEquals("Employee login not unique",response.getMessage());
-        verify(userService,times(1)).updateUser(any());
+        assertEquals("Employee login not unique", response.getMessage());
+        verify(userService, times(1)).updateUser(any());
     }
 
     @Test
@@ -474,8 +474,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
 
-        assertEquals("Invalid salary",response.getMessage());
-        verify(userService,times(0)).updateUser(any());
+        assertEquals("Invalid salary", response.getMessage());
+        verify(userService, times(0)).updateUser(any());
     }
 
     @Test
@@ -491,8 +491,8 @@ class UserControllerTest {
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
 
-        assertEquals("Invalid date",response.getMessage());
-        verify(userService,times(0)).updateUser(any());
+        assertEquals("Invalid date", response.getMessage());
+        verify(userService, times(0)).updateUser(any());
     }
 
     @Test
@@ -506,7 +506,7 @@ class UserControllerTest {
                         .andReturn();
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
-        assertEquals("Successfully deleted",response.getMessage());
+        assertEquals("Successfully deleted", response.getMessage());
     }
 
     @Test
@@ -516,7 +516,7 @@ class UserControllerTest {
                 .andExpect(status().is(400)).andReturn();
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
-        assertEquals("No such employee",response.getMessage());
+        assertEquals("No such employee", response.getMessage());
     }
 
     @Test

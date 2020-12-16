@@ -3,6 +3,7 @@ package com.example.salarymgt.controller;
 import com.example.salarymgt.dto.UserDto;
 import com.example.salarymgt.mapper.UserMapper;
 import com.example.salarymgt.request.UserRequest;
+import com.example.salarymgt.response.FetchUsersResponse;
 import com.example.salarymgt.response.MessageResponse;
 import com.example.salarymgt.response.UserResponse;
 import com.example.salarymgt.service.UserService;
@@ -135,7 +136,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> fetchUsers
+    public ResponseEntity<FetchUsersResponse> fetchUsers
             (@RequestParam(value = "minSalary", required = false) String minSalary,
              @RequestParam(value = "maxSalary", required = false) String maxSalary,
              @RequestParam(value = "offset", required = false) String offset,
@@ -161,7 +162,7 @@ public class UserController {
         List<UserResponse> responses = userDtos.stream()
                 .map(u -> userMapper.mapUserDtoToUserResponse(u))
                 .collect(Collectors.toList());
-        return ResponseEntity.ok().body(responses);
+        return ResponseEntity.ok().body(new FetchUsersResponse().builder().results(responses).build());
 
     }
 
@@ -194,7 +195,7 @@ public class UserController {
                                                       @RequestBody @Valid UserRequest request) {
 
         try {
-            userService.updateUser(UserRequest.builder().build());
+            userService.updateUser(request);
             return ResponseEntity.status(HttpStatus.OK)
                     .body(new MessageResponse()
                             .builder().message("Successfully updated").build());

@@ -9,7 +9,7 @@ import org.mapstruct.Mapper;
 /**
  * Created by Jiang Wensi on 14/12/2020
  */
-@Mapper
+@Mapper(componentModel="spring")
 public interface UserMapper {
     UserEntity mapUserRequestToEntity(UserRequest userRequest);
     UserEntity mapUserDtoToEntity(UserDto userDto);

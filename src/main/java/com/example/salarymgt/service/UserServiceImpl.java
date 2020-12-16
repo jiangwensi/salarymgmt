@@ -110,6 +110,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(String userId) {
         UserEntity userEntity = userRepository.findById(userId);
         if (userEntity == null) {

@@ -28,7 +28,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
             value = "select * from user " +
                     "where salary>=:minSalary and salary<:maxSalary " +
                     "order by id asc " +
-                    "limit 18446744073709551615  " +
+                    "limit 100000  " +
                     "offset:offset")
     List<UserEntity> findBySalaryRangeOffset(@Param("minSalary") BigDecimal minSalary,
                                                   @Param("maxSalary") BigDecimal maxSalary,
