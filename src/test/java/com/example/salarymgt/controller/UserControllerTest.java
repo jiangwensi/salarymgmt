@@ -31,6 +31,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -400,13 +401,12 @@ class UserControllerTest {
 
     @Test
     void updateUser() throws Exception {
-        UserRequest userRequest = TestUtil.testUserRequest(1);
         UserDto userDto = TestUtil.testUserDto(1);
 
-        given(userService.updateUser(userRequest)).willReturn(userDto);
+        given(userService.updateUser(any())).willReturn(userDto);
 
         MvcResult mvcResult =
-                mockMvc.perform(post("/users/1")
+                mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(readFile("src/test/resources/userValid.json"))
                         .accept(MediaType.APPLICATION_JSON))
@@ -417,60 +417,58 @@ class UserControllerTest {
                 .readValue(mvcResult.getResponse().getContentAsString(),MessageResponse.class);
 
         assertEquals("Successfully updated",response.getMessage());
-        verify(userService,times(1)).updateUser(userRequest);
+        verify(userService,times(1)).updateUser(any());
     }
 
     @Test
     void updateUserNotExists() throws Exception {
-        UserRequest userRequest = TestUtil.testUserRequest(1);
 
-        given(userService.updateUser(userRequest)).willThrow(new InvalidInputException("No such employee"));
+        given(userService.updateUser(any())).willThrow(new InvalidInputException("No such employee"));
 
         MvcResult mvcResult =
-                mockMvc.perform(post("/users/1")
+                mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(readFile("src/test/resources/userValid.json"))
                         .accept(MediaType.APPLICATION_JSON))
-                        .andExpect(status().is(200))
+                        .andExpect(status().is(400))
                         .andReturn();
 
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
         assertEquals("No such employee",response.getMessage());
-        verify(userService,times(1)).updateUser(userRequest);
+        verify(userService,times(1)).updateUser(any());
     }
 
     @Test
     void updateUserDuplicateLogin() throws Exception {
-        UserRequest userRequest = TestUtil.testUserRequest(1);
 
-        given(userService.updateUser(userRequest)).willThrow(new InvalidInputException("Employee login not unique"));
+        given(userService.updateUser(any())).willThrow(new InvalidInputException("Employee login not unique"));
 
         MvcResult mvcResult =
-                mockMvc.perform(post("/users/1")
+                mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(readFile("src/test/resources/userValid.json"))
                         .accept(MediaType.APPLICATION_JSON))
-                        .andExpect(status().is(200))
+                        .andExpect(status().is(400))
                         .andReturn();
 
         MessageResponse response = new ObjectMapper()
                 .readValue(mvcResult.getResponse().getContentAsString(), MessageResponse.class);
 
         assertEquals("Employee login not unique",response.getMessage());
-        verify(userService,times(1)).updateUser(userRequest);
+        verify(userService,times(1)).updateUser(any());
     }
 
     @Test
     void updateUserInvalidSalary() throws Exception {
 
         MvcResult mvcResult =
-                mockMvc.perform(post("/users/1")
+                mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(readFile("src/test/resources/userInvalidSalary.json"))
                         .accept(MediaType.APPLICATION_JSON))
-                        .andExpect(status().is(200))
+                        .andExpect(status().is(400))
                         .andReturn();
 
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
@@ -483,11 +481,11 @@ class UserControllerTest {
     @Test
     void updateUserInvalidDate() throws Exception {
         MvcResult mvcResult =
-                mockMvc.perform(post("/users/1")
+                mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(readFile("src/test/resources/userInvalidDate.json"))
                         .accept(MediaType.APPLICATION_JSON))
-                        .andExpect(status().is(200))
+                        .andExpect(status().is(400))
                         .andReturn();
 
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
@@ -501,8 +499,11 @@ class UserControllerTest {
     void deleteUser() throws Exception {
         UserDto userDto = mock(UserDto.class);
         given(userService.getUser("1")).willReturn(userDto);
-        MvcResult mvcResult = mockMvc.perform(delete("/user/1").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().is(200)).andReturn();
+        MvcResult mvcResult =
+                mockMvc.perform(delete("/users/1")
+                        .accept(MediaType.APPLICATION_JSON))
+                        .andExpect(status().is(200))
+                        .andReturn();
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);
         assertEquals("Successfully deleted",response.getMessage());
@@ -510,9 +511,8 @@ class UserControllerTest {
 
     @Test
     void deleteUserNotExists() throws Exception {
-        UserDto userDto = mock(UserDto.class);
-        given(userService.getUser("1")).willReturn(null);
-        MvcResult mvcResult = mockMvc.perform(delete("/user/1").accept(MediaType.APPLICATION_JSON))
+        willThrow(new InvalidInputException("No such employee")).given(userService).deleteUser("1");
+        MvcResult mvcResult = mockMvc.perform(delete("/users/1").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().is(400)).andReturn();
         MessageResponse response = new ObjectMapper().readValue(mvcResult.getResponse().getContentAsString(),
                 MessageResponse.class);

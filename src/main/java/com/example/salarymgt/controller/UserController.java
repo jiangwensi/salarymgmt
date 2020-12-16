@@ -9,6 +9,7 @@ import com.example.salarymgt.service.UserService;
 import com.example.salarymgt.util.DateUtil;
 import com.example.salarymgt.util.NumUtil;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,12 +35,12 @@ import java.util.stream.Collectors;
  */
 @RestController
 @RequestMapping("users")
-@AllArgsConstructor
+@RequiredArgsConstructor
 @Slf4j
 public class UserController {
 
-    private UserService userService;
-    private UserMapper userMapper;
+    private final UserService userService;
+    private final UserMapper userMapper;
 
     @PostMapping(value = "/upload")
     public ResponseEntity<MessageResponse> uploadUser(@RequestParam("file") MultipartFile file) throws IOException {
@@ -143,23 +144,23 @@ public class UserController {
 
         BigDecimal minSalaryDecimal;
         BigDecimal maxSalaryDecimal;
-        Integer offsetInt ;
-        Integer limitInt ;
+        Integer offsetInt;
+        Integer limitInt;
         try {
             minSalaryDecimal = minSalary == null ? null : NumUtil.bigDecimal(minSalary);
             maxSalaryDecimal = maxSalary == null ? null : NumUtil.bigDecimal(maxSalary);
             offsetInt = offset == null ? null : Integer.parseInt(offset);
             limitInt = limit == null ? null : Integer.parseInt(limit);
-        } catch(Exception e){
-            log.error(e.getMessage(),e);
+        } catch (Exception e) {
+            log.error(e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
 
         List<UserDto> userDtos = userService.fetchUsers(minSalaryDecimal, maxSalaryDecimal,
                 offsetInt, limitInt);
         List<UserResponse> responses = userDtos.stream()
-                        .map(u -> userMapper.mapUserDtoToUserResponse(u))
-                        .collect(Collectors.toList());
+                .map(u -> userMapper.mapUserDtoToUserResponse(u))
+                .collect(Collectors.toList());
         return ResponseEntity.ok().body(responses);
 
     }
@@ -167,7 +168,7 @@ public class UserController {
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable("id") String userId) {
         UserDto userDto = userService.getUser(userId);
-        if(userDto==null){
+        if (userDto == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }
         UserResponse response = userMapper.mapUserDtoToUserResponse(userDto);
@@ -188,18 +189,31 @@ public class UserController {
 
     }
 
-    @PatchMapping
-    public ResponseEntity<MessageResponse> updateUser() {
-        //TODO
+    @PatchMapping("/{id}")
+    public ResponseEntity<MessageResponse> updateUser(@PathVariable("id") String id,
+                                                      @RequestBody @Valid UserRequest request) {
 
-        return ResponseEntity.notFound().build();
+        try {
+            userService.updateUser(UserRequest.builder().build());
+            return ResponseEntity.status(HttpStatus.OK)
+                    .body(new MessageResponse()
+                            .builder().message("Successfully updated").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(e.getMessage()).build());
+        }
+
     }
 
-    @DeleteMapping
-    public ResponseEntity<MessageResponse> deleteUser() {
-        //TODO
-
-        return ResponseEntity.notFound().build();
+    @DeleteMapping("/{id}")
+    public ResponseEntity<MessageResponse> deleteUser(@PathVariable("id") String id) {
+        try {
+            userService.deleteUser(id);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new MessageResponse()
+                            .builder().message("Successfully deleted").build());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new MessageResponse().builder().message(e.getMessage()).build());
+        }
     }
-
 }
